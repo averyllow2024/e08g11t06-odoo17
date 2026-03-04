@@ -1,51 +1,100 @@
 trigger:
-- main
+  branches:
+    include:
+      - Staging
+      - master
 
 pool:
   name: Default
 
 variables:
-  stagePath: '/home/azureuser/'
-  updateScript: '/opt/odoo17/update_code.sh'
   repoUrl: 'https://github.com/souravb-smu/odoo17.git'
-  branchName: 'main'
+  updateScript: '/opt/odoo17/update_code.sh'
+  stagePath: '/home/azureuser/'
 
-steps:
-- checkout: self
-  clean: true
+stages:
 
-- task: SSH@0
-  displayName: "Sync github code into stagePath"
-  inputs:
-    sshEndpoint: ssh-odoo17
-    runOptions: commands
-    commands: |
-      set -e
-      echo ">>> Using stagePath: $(stagePath)"
-      echo ">>> Repo: $(repoUrl)"
-      echo ">>> Branch: $(branchName)"
+# =========================
+# STAGING STAGE
+# =========================
+- stage: Staging
+  displayName: Deploy to Staging
+  condition: eq(variables['Build.SourceBranchName'], 'Staging')
 
-      # Remove previous folder completely
-      cd "$(stagePath)"
-      rm -rf deploy-temp
-      rm -rf odoo17
-      git clone "$(repoUrl)" --quiet
-      mv odoo17 deploy-temp
-      cd deploy-temp
-      # Remove unwanted files
-      rm -f .DS_Store
-      rm -rf .github
+  jobs:
+  - deployment: DeployStaging
+    environment: Staging
+    strategy:
+      runOnce:
+        deploy:
+          steps:
 
-      echo ">>> Stage folder ready:"
-      ls -la
-- task: SSH@0
-  displayName: 'Run update script on VM'
-  inputs:
-    sshEndpoint: 'ssh-odoo17'
-    runOptions: 'commands'
-    commands: |
-      sudo -n true || (echo "ERROR: azureuser NOPASSWD not effective" && exit 1)
-    
-      #sudo chmod +x $(updateScript)
-      sudo $(updateScript)
-    readyTimeout: '20000'
+          - task: SSH@0
+            displayName: "Sync Code - Staging"
+            inputs:
+              sshEndpoint: 'ssh-odoo17'
+              runOptions: commands
+              commands: |
+                set -e
+                echo "Deploying branch: $(Build.SourceBranchName)"
+
+                cd $(stagePath)
+                rm -rf deploy-temp odoo17
+
+                git clone -b staging $(repoUrl) --quiet
+                mv odoo17 deploy-temp
+
+                cd deploy-temp
+                rm -f .DS_Store
+                rm -rf .github
+
+          - task: SSH@0
+            displayName: "Run Update Script - Staging"
+            inputs:
+              sshEndpoint: 'ssh-odoo17'
+              runOptions: commands
+              commands: |
+                sudo $(updateScript)
+
+
+# =========================
+# PRODUCTION STAGE
+# =========================
+- stage: Production
+  displayName: Deploy to Production
+  condition: eq(variables['Build.SourceBranchName'], 'master')
+
+  jobs:
+  - deployment: DeployProduction
+    environment: Production
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+
+          - task: SSH@0
+            displayName: "Sync Code - Production"
+            inputs:
+              sshEndpoint: 'ssh-odoo17-production'
+              runOptions: commands
+              commands: |
+                set -e
+                echo "Deploying branch: $(Build.SourceBranchName)"
+
+                cd $(stagePath)
+                rm -rf deploy-temp odoo17
+
+                git clone -b master $(repoUrl) --quiet
+                mv odoo17 deploy-temp
+
+                cd deploy-temp
+                rm -f .DS_Store
+                rm -rf .github
+
+          - task: SSH@0
+            displayName: "Run Update Script - Production"
+            inputs:
+              sshEndpoint: 'ssh-odoo17-production'
+              runOptions: commands
+              commands: |
+                sudo $(updateScript)
