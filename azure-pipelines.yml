@@ -39,10 +39,10 @@ stages:
                 echo "Deploying branch: $(Build.SourceBranchName)"
 
                 cd $(stagePath)
-                rm -rf deploy-temp odoo17
+                rm -rf deploy-temp *-odoo17
 
                 git clone -b Staging $(repoUrl) --quiet
-                mv odoo17 deploy-temp
+                mv *-odoo17 deploy-temp
 
                 cd deploy-temp
                 rm -f .DS_Store
@@ -83,10 +83,10 @@ stages:
                 echo "Deploying branch: $(Build.SourceBranchName)"
 
                 cd $(stagePath)
-                rm -rf deploy-temp odoo17
+                rm -rf deploy-temp *-odoo17
 
                 git clone -b master $(repoUrl) --quiet
-                mv odoo17 deploy-temp
+                mv *-odoo17 deploy-temp
 
                 cd deploy-temp
                 rm -f .DS_Store
