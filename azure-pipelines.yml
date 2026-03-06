@@ -109,13 +109,10 @@ stages:
           - task: SSH@0
             displayName: "Restore Database"
             inputs:
-              sshEndpoint: 'ssh-odoo17'
+              sshEndpoint: 'ssh-odoo17-production'
               runOptions: commands
               commands: |
                 set -e
-                cd $(tempDeploy)/
-                pwd
-                ls -l
                 echo "$(STAGINGUSERPASSWORD)" | sudo -S -p '' chmod +x $(restoreDBscript)
                 echo "$(DB_PASSWORD)" | sudo -S -p '' $(restoreDBscript) \
                     "$(DB_PASSWORD)" \
