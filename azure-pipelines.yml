@@ -11,6 +11,7 @@ variables:
   repoUrl: 'https://github.com/averyllow2024/e08g11t06-odoo17.git'
   updateScript: '/home/azureuser/deploy-temp/update_code.sh'
   stagePath: '/home/azureuser/'
+  tempDeploy: '/home/azureuser/deploy-temp'
 
 stages:
 
